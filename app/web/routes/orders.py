@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import io
 import secrets
+from typing import Any
 
 import qrcode
 import qrcode.image.svg
@@ -80,7 +81,7 @@ def _qr_data_uri(text: str) -> str:
     return "data:image/svg+xml;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
-def _order_context(db: Session, order: Order) -> dict[str, object]:
+def _order_context(db: Session, order: Order) -> dict[str, Any]:
     attempts = (
         db.execute(
             select(PaymentAttempt)

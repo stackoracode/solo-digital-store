@@ -176,7 +176,8 @@ def product_update(
     product.low_stock_threshold = _int(form, "low_stock_threshold", 5, 0, 100000)
     product.sort = _int(form, "sort", 0, -10000, 10000)
     cat = form_str(form, "category_id", 20)
-    product.category_id = int(cat) if cat.isdigit() and db.get(Category, int(cat)) else None
+    category = db.get(Category, int(cat)) if cat.isdigit() else None
+    product.category_id = category.id if category is not None and category.store_id == store.id else None
     product.supplier_code = form_str(form, "supplier_code", 40) or None
     product.waffo_product_id = form_str(form, "waffo_product_id", 64) or None
     new_approved = form.get("waffo_approved") == "1"
@@ -351,11 +352,12 @@ def sku_codes(
         .scalars()
         .all()
     )
-    counts = dict(
-        db.execute(
+    counts: dict[str, int] = {
+        status: int(n)
+        for status, n in db.execute(
             select(CardCode.status, func.count()).where(CardCode.sku_id == sku.id).group_by(CardCode.status)
         ).all()
-    )
+    }
     recent = (
         db.execute(select(CardCode).where(CardCode.sku_id == sku.id).order_by(CardCode.id.desc()).limit(50))
         .scalars()

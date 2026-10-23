@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -27,7 +29,7 @@ def agent_home(
 ):
     agent = db.execute(select(Agent).where(Agent.user_id == user.id)).scalar_one_or_none()
     stats = agent_stats(db, agent) if agent and agent.status == "active" else None
-    commissions = []
+    commissions: Sequence[Commission] = []
     if agent is not None:
         commissions = (
             db.execute(

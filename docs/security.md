@@ -69,3 +69,8 @@ products; disabling CI security checks; force-pushing over history.
 ## Verification pipeline
 CI: ruff (incl. bandit-style `S` rules), mypy, pytest with security tests (authorization, CSRF, host spoofing, SSRF,
 signatures, double-spend/double-delivery), pip-audit, gitleaks. Planned: OWASP ZAP baseline against staging (issue).
+
+## Accepted dependency advisories
+| ID | Package | Why accepted | Revisit |
+|---|---|---|---|
+| PYSEC-2026-1325 / CVE-2024-23342 (Minerva) | `ecdsa` (transitive via `bip-utils`) | Affects P-256 signing/key generation timing. The app only derives secp256k1 *public* keys from an xpub; no private keys exist on the server. No upstream fix planned. | If any signing is ever added, or bip-utils drops/changes the dependency |

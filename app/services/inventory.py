@@ -58,14 +58,15 @@ def import_codes(
             duplicates += 1
             continue
         seen.add(fp)
-        result = db.execute(
+        inserted_id = db.execute(
             pg_insert(CardCode)
             .values(
                 sku_id=sku.id, batch_id=batch.id, secret_enc=encrypt(code), fingerprint=fp, status="available"
             )
             .on_conflict_do_nothing(index_elements=["sku_id", "fingerprint"])
-        )
-        if result.rowcount:
+            .returning(CardCode.id)
+        ).scalar_one_or_none()
+        if inserted_id is not None:
             imported += 1
         else:
             duplicates += 1

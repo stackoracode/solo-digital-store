@@ -98,7 +98,9 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - name: Dependency vulnerability audit
-        run: pip install pip-audit==2.10.1 && pip-audit -r requirements.txt --strict
+        # PYSEC-2026-1325 (CVE-2024-23342, Minerva) affects python-ecdsa P-256 *signing/keygen*. ecdsa is a transitive
+        # dependency of bip-utils; this app only derives public keys from an xpub and never signs. No upstream fix.
+        run: pip install pip-audit==2.10.1 && pip-audit -r requirements.txt --strict --ignore-vuln PYSEC-2026-1325
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2
         env:

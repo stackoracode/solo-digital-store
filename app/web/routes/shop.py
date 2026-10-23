@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -29,7 +31,7 @@ def _visit(request: Request, db: Session) -> None:
         db.rollback()
 
 
-def _cards(db: Session, products: list[Product]) -> list[dict[str, object]]:
+def _cards(db: Session, products: list[Product]) -> list[dict[str, Any]]:
     stock = catalog_svc.stock_by_sku(
         db, [s.id for p in products if p.fulfillment_method == "auto_card" for s in p.skus]
     )
@@ -107,7 +109,7 @@ def _product_or_404(db: Session, store: Store, slug: str) -> Product:
     return product
 
 
-def _product_page(request: Request, db: Session, store: Store, product: Product, **extra: object):
+def _product_page(request: Request, db: Session, store: Store, product: Product, **extra: Any):
     form_fields = []
     if product.current_form_version_id:
         version = db.get(ProductFormVersion, product.current_form_version_id)

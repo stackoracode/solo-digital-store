@@ -30,13 +30,14 @@ def channels(request: Request, db: Session = Depends(get_db)):
     since = utcnow() - timedelta(hours=24)
     stats = {}
     for ch in rows:
-        counts = dict(
-            db.execute(
+        counts: dict[str, int] = {
+            status: int(n)
+            for status, n in db.execute(
                 select(PaymentAttempt.status, func.count())
                 .where(PaymentAttempt.channel_code == ch.code, PaymentAttempt.created_at >= since)
                 .group_by(PaymentAttempt.status)
             ).all()
-        )
+        }
         stats[ch.code] = counts
     cursors = {c.network: c for c in db.execute(select(ChainCursor)).scalars()}
     s = get_settings()

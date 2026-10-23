@@ -35,10 +35,10 @@ def process_image(data: bytes) -> bytes:
             probe.verify()
         with Image.open(io.BytesIO(data)) as img:
             img.seek(0)
-            img = img.convert("RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB")
-            img.thumbnail((MAX_SIDE, MAX_SIDE))
+            converted = img.convert("RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB")
+            converted.thumbnail((MAX_SIDE, MAX_SIDE))
             out = io.BytesIO()
-            img.save(out, format="WEBP", quality=82, method=4)
+            converted.save(out, format="WEBP", quality=82, method=4)
             return out.getvalue()
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise UploadError("invalid_image") from exc
