@@ -1,0 +1,27 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.reviews') }}</h1>
+<p class="filters">{% for s in ('open','resolved','dismissed') %}<a class="chip {% if status == s %}active{% endif %}" href="?status={{ s }}">{{ s }}</a>{% endfor %}</p>
+{% for r in items %}
+<section class="card review sev-{{ r.severity }}">
+  <div class="row-between"><strong><span class="tag">{{ r.kind }}</span> #{{ r.id }}</strong><span class="muted small">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+  <p>{{ r.summary }}</p>
+  <p class="small">{% if r.order_id %}<a href="/admin/orders/{{ r.order_id }}">Order #{{ r.order_id }}</a>{% endif %}{% if r.attempt_id %} · attempt #{{ r.attempt_id }}{% endif %}{% if r.transfer_id %} · <a href="/admin/payments/transfers">transfer #{{ r.transfer_id }}</a>{% endif %}{% if r.procurement_id %} · <a href="/admin/procurements">procurement #{{ r.procurement_id }}</a>{% endif %}</p>
+  {% if r.status == 'open' %}
+  <form method="post" action="/admin/reviews/{{ r.id }}/resolve" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="resolution" placeholder="Resolution note" maxlength="2000">
+    <button class="btn btn-small" name="action" value="resolve">Resolve</button>
+    <button class="btn btn-small" name="action" value="dismiss">Dismiss</button>
+  </form>
+  {% if r.kind in creditable and r.attempt_id %}
+  <form method="post" action="/admin/reviews/{{ r.id }}/credit" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="confirm" value="1">
+    <input name="resolution" placeholder="Evidence (explorer link / provider ref)" maxlength="1500" required>
+    <button class="btn btn-small btn-primary" data-confirm="Only credit after verifying the funds on-chain or in the provider dashboard. Continue?">Verify &amp; credit payment</button>
+  </form>
+  {% endif %}
+  {% else %}<p class="small muted">{{ r.status }}: {{ r.resolution }}</p>{% endif %}
+</section>
+{% else %}<p class="muted">Nothing here.</p>{% endfor %}
+{% endblock %}

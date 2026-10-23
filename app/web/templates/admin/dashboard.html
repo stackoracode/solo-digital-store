@@ -1,0 +1,32 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.dashboard') }} · {{ stats.days }}d</h1>
+<div class="kpis">
+  <div class="kpi"><span>{{ t('kpi.visitors') }}</span><strong>{{ stats.visitors }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.orders') }}</span><strong>{{ stats.orders }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.paid_orders') }}</span><strong>{{ stats.paid_orders }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.conversion') }}</span><strong>{{ stats.conversion if stats.conversion is not none else '-' }}%</strong></div>
+  <div class="kpi"><span>{{ t('kpi.payment_success') }}</span><strong>{{ stats.payment_success_rate if stats.payment_success_rate is not none else '-' }}%</strong></div>
+  <div class="kpi"><span>{{ t('kpi.delivery_rate') }}</span><strong>{{ stats.delivery_rate if stats.delivery_rate is not none else '-' }}%</strong></div>
+  <div class="kpi"><span>{{ t('kpi.avg_delivery') }}</span><strong>{{ stats.avg_delivery_seconds|duration }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.revenue') }}</span><strong>{{ stats.revenue|money('USD') }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.refunded') }}</span><strong>{{ stats.refunded|money('USD') }} ({{ stats.refund_count }})</strong></div>
+  <div class="kpi"><span>{{ t('kpi.fees') }}</span><strong>{{ stats.fees|money('USD') }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.costs') }}</span><strong>{{ stats.procurement_costs|money('USD') }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.commissions') }}</span><strong>{{ stats.commissions|money('USD') }}</strong></div>
+  <div class="kpi"><span>{{ t('kpi.contribution') }}</span><strong>{{ stats.gross_contribution|money('USD') }}</strong></div>
+  <div class="kpi warn"><span>{{ t('kpi.open_reviews') }}</span><strong><a href="/admin/reviews">{{ stats.open_reviews }}</a></strong></div>
+</div>
+<p class="small muted">Amounts summed in store currency (USD in Phase 1). Contribution = revenue − refunds − channel fees − procurement cost − commissions.</p>
+<div class="cols">
+  <section class="card"><h2>{{ t('admin.reviews') }}</h2>
+    <ul class="list">{% for r in reviews %}<li><span class="tag">{{ r.kind }}</span> {{ r.summary[:120] }}{% if r.order_id %} · <a href="/admin/orders/{{ r.order_id }}">#{{ r.order_id }}</a>{% endif %}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+  </section>
+  <section class="card"><h2>{{ t('admin.recent_orders') }}</h2>
+    <ul class="list">{% for o in recent %}<li><a href="/admin/orders/{{ o.id }}">{{ o.order_no }}</a> · {{ o.total|money(o.currency) }} · {{ o.payment_status }}/{{ o.fulfillment_status }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+  </section>
+  <section class="card"><h2>{{ t('admin.low_stock') }}</h2>
+    <ul class="list">{% for r in low_stock %}<li><a href="/admin/skus/{{ r.sku_id }}/codes">{{ r.product }} · {{ r.sku }}</a> — {{ r.available }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+  </section>
+</div>
+{% endblock %}

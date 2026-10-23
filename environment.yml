@@ -1,0 +1,10 @@
+# Conda development environment. Create with:
+#   conda env create -f environment.yml && conda activate solostore
+name: solostore
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements-dev.txt

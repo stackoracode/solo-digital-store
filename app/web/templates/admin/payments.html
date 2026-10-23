@@ -1,0 +1,38 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<div class="row-between"><h1 class="h2">{{ t('admin.payments') }}</h1>
+  <span><a href="/admin/payments/attempts">Attempts</a> · <a href="/admin/payments/events">Webhook events</a> · <a href="/admin/payments/transfers">On-chain transfers</a></span></div>
+<section class="card">
+  <h2>Server-side configuration (environment)</h2>
+  <ul class="facts">{% for k, v in secrets_status.items() %}<li><span>{{ k }}</span><strong>{{ '✔' if v else '✘' }}</strong></li>{% endfor %}</ul>
+  <p class="small muted">Secrets are only read from environment variables and are never shown here. Live Waffo additionally requires each product to be marked "approved by Waffo merchant review". Live USDT requires USDT_LIVE_ENABLED and a verified network.</p>
+</section>
+{% for ch in channels %}
+<section class="card">
+  <div class="row-between"><h2>{{ ch.display_name }} <span class="tag">{{ ch.code }}</span> <span class="tag">{{ ch.provider }}</span></h2>
+    <span class="badge {{ 'pay-paid' if ch.enabled else '' }}">{{ 'enabled' if ch.enabled else 'disabled' }} · {{ ch.mode }}</span></div>
+  <p class="small">24h: {% for s, n in stats[ch.code].items() %}{{ s }} {{ n }} · {% endfor %} last event {{ ch.last_event_at.strftime('%m-%d %H:%M') if ch.last_event_at else '—' }}
+    {% if ch.provider != 'usdt' %} · webhook URL <code>{{ webhook_base }}{{ ch.code }}</code>{% endif %}</p>
+  {% if ch.last_error %}<p class="err small">{{ ch.last_error }}</p>{% endif %}
+  {% if ch.provider == 'usdt' %}{% set net = networks.get(ch.config.get('network')) %}{% set cur = cursors.get(ch.config.get('network')) %}
+    {% if net %}<p class="small">{{ net.display_name }} · chain {{ net.chain_id }} · {{ net.token_symbol }} <code>{{ net.token_contract }}</code> · {{ net.confirmations }} confirmations · verified {{ ch.verified_at.strftime('%Y-%m-%d') if ch.verified_at else 'NO' }}</p>{% endif %}
+    {% if cur %}<p class="small">cursor {{ cur.last_scanned_block }} / head {{ cur.last_head_block }} · ok {{ cur.last_success_at.strftime('%m-%d %H:%M:%S') if cur.last_success_at else '—' }} {% if cur.last_error %}<span class="err">{{ cur.last_error[:200] }}</span>{% endif %}</p>
+    <form method="post" action="/admin/payments/cursor/{{ cur.network }}/rescan" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input name="from_block" placeholder="Rescan from block" inputmode="numeric"><button class="btn btn-small">Rescan</button></form>{% endif %}
+    <form method="post" action="/admin/payments/{{ ch.code }}/verify" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small">Verify network via RPC</button></form>
+  {% endif %}
+  <form method="post" action="/admin/payments/{{ ch.code }}" class="grid-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="inline"><input type="checkbox" name="enabled" value="1" {% if ch.enabled %}checked{% endif %}> enabled</label>
+    <label>Mode<select name="mode"><option {% if ch.mode == 'test' %}selected{% endif %}>test</option>{% if ch.provider != 'mock' %}<option {% if ch.mode == 'live' %}selected{% endif %}>live</option>{% endif %}</select></label>
+    <label>Name<input name="display_name" value="{{ ch.display_name }}" maxlength="80"></label>
+    <label>Sort<input name="sort" value="{{ ch.sort }}" inputmode="numeric"></label>
+    <label>Fee % (fraction, 0.039 = 3.9%)<input name="fee_percent" value="{{ ch.fee_percent }}"></label>
+    <label>Fixed fee<input name="fee_fixed" value="{{ ch.fee_fixed }}"></label>
+    <label>Min amount<input name="min_amount" value="{{ ch.min_amount or '' }}"></label>
+    <label>Max amount<input name="max_amount" value="{{ ch.max_amount or '' }}"></label>
+    {% if ch.provider == 'waffo' %}<label>Tax category<input name="tax_category" value="{{ ch.config.get('tax_category', 'digital_goods') }}"></label>{% endif %}
+    <button class="btn btn-small" data-confirm="Apply payment channel changes?">Save</button>
+  </form>
+</section>
+{% endfor %}
+{% endblock %}

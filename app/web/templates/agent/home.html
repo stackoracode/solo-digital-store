@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1 class="h2">{{ t('agent.title') }}</h1>
+  {% if not agent %}
+  <p>{{ t('agent.intro') }}</p>
+  <form method="post" action="/agent/apply">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('agent.note') }}<textarea name="note" rows="3" maxlength="2000"></textarea></label>
+    <button class="btn btn-primary btn-block">{{ t('agent.apply') }}</button>
+  </form>
+  {% elif agent.status != 'active' %}
+  <p>{{ t('agent.status.' ~ agent.status) }}</p>
+  {% else %}
+  <p>{{ t('agent.your_link') }}</p>
+  <p><code class="break">{{ link }}</code> <button type="button" class="btn btn-small" data-copy="{{ link }}">{{ t('common.copy') }}</button></p>
+  <ul class="facts">
+    <li><span>{{ t('agent.rate') }}</span><strong>{{ (agent.commission_rate * 100)|round(2) }}%</strong></li>
+    <li><span>{{ t('agent.orders') }}</span><strong>{{ stats.paid_orders }} / {{ stats.orders }}</strong></li>
+    {% for status, row in stats.by_status.items() %}<li><span>{{ t('commission.' ~ status) }}</span><strong>{{ row.count }} · {{ row.amount }}</strong></li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% if commissions %}
+<section class="card"><h2>{{ t('agent.commissions') }}</h2>
+  <ul class="list">{% for c in commissions %}<li>#{{ c.order_id }} · {{ c.amount|money(c.currency) }} · {{ t('commission.' ~ c.status) }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

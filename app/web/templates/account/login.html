@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('login.title') }}</h1>
+  <p class="muted">{{ t('login.subtitle') }}</p>
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  {% if step == 'code' %}
+  <p>{{ t('login.code_sent', email=email) }}</p>
+  <form method="post" action="/account/login/verify">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="hidden" name="email" value="{{ email }}">
+    <label>{{ t('login.code') }}<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus></label>
+    <button class="btn btn-primary btn-block">{{ t('login.verify') }}</button>
+  </form>
+  <p class="small"><a href="/account/login?next={{ next }}">{{ t('login.change_email') }}</a></p>
+  {% else %}
+  <form method="post" action="/account/login/code">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>{{ t('login.email') }}<input type="email" name="email" value="{{ email }}" required maxlength="254" autocomplete="email"></label>
+    {% include "partials/turnstile.html" %}
+    <button class="btn btn-primary btn-block">{{ t('login.send_code') }}</button>
+  </form>
+  {% endif %}
+  {% if login_providers or telegram_bot_username %}
+  <div class="divider"><span>{{ t('login.or') }}</span></div>
+  {% for p in login_providers %}
+  <a class="btn btn-block" href="/account/oauth/{{ p.name }}?next={{ next }}">{{ t('login.continue_with', provider=p.label) }}</a>
+  {% endfor %}
+  {% if telegram_bot_username %}
+  <div class="center tg"><script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="{{ telegram_bot_username }}" data-size="large" data-auth-url="{{ public_base_url }}/account/telegram/callback" data-request-access="write"></script></div>
+  {% endif %}
+  {% endif %}
+  <p class="small muted">{{ t('login.guest_note') }}</p>
+</section>
+{% endblock %}

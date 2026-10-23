@@ -1,0 +1,10 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.procurements') }}</h1>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Item</th><th>Supplier</th><th>Status</th><th>Quote / cap</th><th>Upstream</th><th>Last error</th><th></th></tr></thead><tbody>
+{% for p in procurements %}<tr><td>{{ p.id }}</td><td>{{ p.order_item_id }}</td><td>{{ p.supplier_code }}/{{ p.supplier_sku }} ×{{ p.quantity }}</td><td>{{ p.status }}</td>
+<td>{{ p.quoted_unit_cost or '-' }} / {{ p.max_unit_cost or '-' }}</td><td>{{ p.supplier_order_no or '—' }}</td><td class="small">{{ p.last_error[:160] }}</td>
+<td>{% if p.status in ('pending','submitted','unknown') %}<form method="post" action="/admin/procurements/{{ p.id }}/take-over"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input name="note" placeholder="Note"><button class="btn btn-small" data-confirm="Stop automation and handle manually?">Take over</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">—</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

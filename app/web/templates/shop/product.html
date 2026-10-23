@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ product.tr('title', locale) }} · {{ ss.store_name }}{% endblock %}
+{% block description %}{{ product.tr('description', locale)[:150] }}{% endblock %}
+{% block content %}
+<article class="product">
+  {% if product.images %}
+  <div class="gallery">
+    {% for img in product.images %}<img src="{{ img.url }}" alt="{{ img.alt or product.title }}" {% if not loop.first %}loading="lazy"{% endif %}>{% endfor %}
+  </div>
+  {% endif %}
+  <h1>{{ product.tr('title', locale) }}</h1>
+
+  <ul class="facts">
+    <li><span>{{ t('product.delivery_method') }}</span><strong>{{ t('fulfillment.' ~ product.fulfillment_method) }}</strong></li>
+    <li><span>{{ t('product.eta') }}</span><strong>{% if product.delivery_eta_minutes == 0 %}{{ t('product.eta_instant') }}{% else %}{{ t('product.eta_minutes', n=product.delivery_eta_minutes) }}{% endif %}</strong></li>
+    <li><span>{{ t('product.support') }}</span><strong>{{ ss.support_email }}</strong></li>
+  </ul>
+
+  <form class="card buy" method="post" action="/p/{{ product.slug }}/checkout" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if errors._form %}<div class="alert">{{ t('error.' ~ errors._form) }}</div>{% endif %}
+    <fieldset>
+      <legend>{{ t('product.choose_option') }}</legend>
+      {% for sku in product.active_skus %}
+      {% set left = stock.get(sku.id) %}
+      <label class="option">
+        <input type="radio" name="sku_id" value="{{ sku.id }}" {% if loop.first %}checked{% endif %} {% if product.fulfillment_method == 'auto_card' and not left %}disabled{% endif %}>
+        <span class="opt-name">{{ sku.name }}</span>
+        <span class="opt-price">{{ sku.price|money(sku.currency) }}</span>
+        {% if product.fulfillment_method == 'auto_card' %}<span class="muted small">{{ t('product.in_stock', n=left or 0) }}</span>{% endif %}
+      </label>
+      {% endfor %}
+    </fieldset>
+    <label>{{ t('product.quantity') }}
+      <input type="number" name="quantity" value="{{ values.get('quantity', product.min_qty) }}" min="{{ product.min_qty }}" max="{{ product.max_qty }}" inputmode="numeric">
+    </label>
+
+    {% for f in form_fields %}
+    {% set name = 'f_' ~ f.key %}
+    <div class="field {% if errors.get(f.key) %}has-error{% endif %}">
+      <label for="{{ name }}">{{ f.label }}{% if f.required %} *{% endif %}</label>
+      {% if f.type == 'textarea' %}
+        <textarea id="{{ name }}" name="{{ name }}" maxlength="{{ f.max_length }}" rows="3" {% if f.required %}required{% endif %}>{{ values.get(name, '') }}</textarea>
+      {% elif f.type == 'select' %}
+        <select id="{{ name }}" name="{{ name }}" {% if f.required %}required{% endif %}>
+          <option value="">—</option>
+          {% for o in f.options %}<option value="{{ o }}" {% if values.get(name) == o %}selected{% endif %}>{{ o }}</option>{% endfor %}
+        </select>
+      {% elif f.type == 'radio' %}
+        {% for o in f.options %}<label class="inline"><input type="radio" name="{{ name }}" value="{{ o }}" {% if values.get(name) == o %}checked{% endif %}> {{ o }}</label>{% endfor %}
+      {% elif f.type == 'checkbox' %}
+        {% for o in f.options %}<label class="inline"><input type="checkbox" name="{{ name }}" value="{{ o }}"> {{ o }}</label>{% endfor %}
+      {% else %}
+        <input id="{{ name }}" name="{{ name }}" type="{{ 'number' if f.type == 'number' else 'text' }}" maxlength="{{ f.max_length }}" value="{{ values.get(name, '') }}" {% if f.required %}required{% endif %} {% if f.type == 'number' %}step="any" inputmode="decimal"{% endif %} autocomplete="off">
+      {% endif %}
+      {% if f.help %}<small class="muted">{{ f.help }}</small>{% endif %}
+      {% if errors.get(f.key) %}<small class="err">{{ t('form_error.' ~ errors.get(f.key)) }}</small>{% endif %}
+    </div>
+    {% endfor %}
+
+    <label>{{ t('product.email') }}
+      <input type="email" name="email" required maxlength="254" autocomplete="email" value="{{ values.get('email', viewer.user.email if viewer and viewer.user and viewer.user.email else '') }}" placeholder="you@example.com">
+      <small class="muted">{{ t('product.email_help') }}</small>
+    </label>
+    {% include "partials/turnstile.html" %}
+    <p class="small muted">{{ t('product.price_note') }}</p>
+    <button class="btn btn-primary btn-block" type="submit">{{ t('product.buy_now') }}</button>
+    <p class="small muted center">{{ t('product.guest_ok') }}</p>
+  </form>
+
+  {% if product.tr('description', locale) %}<section class="card"><h2>{{ t('product.description') }}</h2><p>{{ product.tr('description', locale)|nl2br }}</p></section>{% endif %}
+  {% if product.tr('usage_guide', locale) %}<section class="card"><h2>{{ t('product.usage') }}</h2><p>{{ product.tr('usage_guide', locale)|nl2br }}</p></section>{% endif %}
+  {% if product.tr('purchase_notes', locale) %}<section class="card"><h2>{{ t('product.notes') }}</h2><p>{{ product.tr('purchase_notes', locale)|nl2br }}</p></section>{% endif %}
+  <section class="card"><h2>{{ t('product.refund_policy') }}</h2><p>{{ refund_policy|nl2br }}</p></section>
+</article>
+{% endblock %}

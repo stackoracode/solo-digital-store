@@ -1,0 +1,119 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+{% set zh = product.translations.get('zh-CN', {}) %}
+<div class="row-between"><h1 class="h2">#{{ product.id }} {{ product.title }}</h1><a class="btn btn-small" href="/p/{{ product.slug }}" target="_blank" rel="noopener">View</a></div>
+{% if created %}<div class="alert info">Listed. Add SKUs, codes or images below if needed.</div>{% endif %}
+
+<form method="post" action="/admin/products/{{ product.id }}" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="cols">
+    <div>
+      <label>Title<input name="title" value="{{ product.title }}" maxlength="160" required></label>
+      <label>Slug<input name="slug" value="{{ product.slug }}" maxlength="80"></label>
+      <label>Status<select name="status">{% for s in ('draft', 'active', 'archived') %}<option {% if product.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+      <label>Category<select name="category_id"><option value="">—</option>{% for c in categories %}<option value="{{ c.id }}" {% if product.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+      <label>Delivery method<select name="fulfillment_method">{% for m in methods %}<option value="{{ m }}" {% if product.fulfillment_method == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></label>
+      <label>Estimated delivery (minutes, 0 = instant)<input type="number" name="delivery_eta_minutes" value="{{ product.delivery_eta_minutes }}" min="0"></label>
+      <div class="cols tight">
+        <label>Min qty<input type="number" name="min_qty" value="{{ product.min_qty }}" min="1"></label>
+        <label>Max qty<input type="number" name="max_qty" value="{{ product.max_qty }}" min="1"></label>
+        <label>Low-stock alert<input type="number" name="low_stock_threshold" value="{{ product.low_stock_threshold }}" min="0"></label>
+        <label>Sort<input type="number" name="sort" value="{{ product.sort }}"></label>
+      </div>
+      <label>Supplier code (supplier delivery)<input name="supplier_code" value="{{ product.supplier_code or '' }}" maxlength="40" placeholder="mock"></label>
+    </div>
+    <div>
+      <label>Description<textarea name="description" rows="5">{{ product.description }}</textarea></label>
+      <label>Usage instructions<textarea name="usage_guide" rows="3">{{ product.usage_guide }}</textarea></label>
+      <label>Purchase notes<textarea name="purchase_notes" rows="3">{{ product.purchase_notes }}</textarea></label>
+      <label>Refund policy (blank = store default)<textarea name="refund_policy" rows="3">{{ product.refund_policy }}</textarea></label>
+    </div>
+  </div>
+  <details><summary>简体中文 (zh-CN)</summary>
+    <label>标题<input name="zh_title" value="{{ zh.get('title', '') }}" maxlength="160"></label>
+    <label>描述<textarea name="zh_description" rows="3">{{ zh.get('description', '') }}</textarea></label>
+    <label>使用说明<textarea name="zh_usage_guide" rows="2">{{ zh.get('usage_guide', '') }}</textarea></label>
+    <label>购买须知<textarea name="zh_purchase_notes" rows="2">{{ zh.get('purchase_notes', '') }}</textarea></label>
+  </details>
+  <details><summary>Payments &amp; compliance</summary>
+    <label>Waffo product ID (PROD_…)<input name="waffo_product_id" value="{{ product.waffo_product_id or '' }}" maxlength="64"></label>
+    <label class="inline"><input type="checkbox" name="waffo_approved" value="1" {% if product.waffo_approved %}checked{% endif %}> Category approved by Waffo merchant review (owner only; required for live Waffo)</label>
+    <p class="small muted">Allowed channels (none checked = all enabled channels):</p>
+    {% for ch in channels %}<label class="inline"><input type="checkbox" name="allowed_channels" value="{{ ch.code }}" {% if product.allowed_channels and ch.code in product.allowed_channels %}checked{% endif %}> {{ ch.display_name }}</label>{% endfor %}
+  </details>
+  <details {% if form_fields %}open{% endif %}><summary>Order form fields ({{ form_fields|length }})</summary>
+    <p class="small muted">Types: {{ field_types|join(', ') }}. Options one per line or comma separated. Passwords, card data, PINs, seed phrases are rejected. Saving a change creates a new form version; existing orders keep their snapshot.</p>
+    {% for i in range(form_fields|length) %}{% set f = form_fields[i] %}
+    <fieldset class="fieldrow">
+      <input name="f{{ i }}_key" value="{{ f.key }}" placeholder="key (role_id)" maxlength="32">
+      <input name="f{{ i }}_label" value="{{ f.label }}" placeholder="Label" maxlength="80">
+      <select name="f{{ i }}_type">{% for ft in field_types %}<option {% if f.type == ft %}selected{% endif %}>{{ ft }}</option>{% endfor %}</select>
+      <input name="f{{ i }}_help" value="{{ f.help }}" placeholder="Hint" maxlength="200">
+      <textarea name="f{{ i }}_options" rows="2" placeholder="Options">{{ f.options|join('\n') }}</textarea>
+      <input name="f{{ i }}_pattern" value="{{ f.pattern }}" placeholder="Regex (optional)" maxlength="200">
+      <input name="f{{ i }}_max_length" value="{{ f.max_length }}" placeholder="Max length" inputmode="numeric">
+      <input name="f{{ i }}_min" value="{{ f.get('min', '') }}" placeholder="Min (number)">
+      <input name="f{{ i }}_max" value="{{ f.get('max', '') }}" placeholder="Max (number)">
+      <input name="f{{ i }}_order" value="{{ f.order }}" placeholder="Order" inputmode="numeric">
+      <label class="inline"><input type="checkbox" name="f{{ i }}_required" value="1" {% if f.required %}checked{% endif %}> required</label>
+      <small class="muted">Clear key and label to remove.</small>
+    </fieldset>
+    {% endfor %}
+    {% for i in blank_rows %}
+    <fieldset class="fieldrow blank">
+      <input name="f{{ i }}_key" placeholder="key (new field)" maxlength="32">
+      <input name="f{{ i }}_label" placeholder="Label" maxlength="80">
+      <select name="f{{ i }}_type">{% for ft in field_types %}<option>{{ ft }}</option>{% endfor %}</select>
+      <input name="f{{ i }}_help" placeholder="Hint" maxlength="200">
+      <textarea name="f{{ i }}_options" rows="2" placeholder="Options"></textarea>
+      <input name="f{{ i }}_pattern" placeholder="Regex (optional)" maxlength="200">
+      <input name="f{{ i }}_max_length" placeholder="Max length" inputmode="numeric">
+      <input name="f{{ i }}_min" placeholder="Min (number)">
+      <input name="f{{ i }}_max" placeholder="Max (number)">
+      <input name="f{{ i }}_order" value="{{ i }}" inputmode="numeric">
+      <label class="inline"><input type="checkbox" name="f{{ i }}_required" value="1"> required</label>
+    </fieldset>
+    {% endfor %}
+  </details>
+  <button class="btn btn-primary">Save product</button>
+</form>
+
+<section class="card" id="skus">
+  <h2>SKUs</h2>
+  {% for s in product.skus %}
+  <form method="post" action="/admin/products/{{ product.id }}/skus" class="skurow">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="sku_id" value="{{ s.id }}">
+    <input name="name" value="{{ s.name }}" maxlength="120" aria-label="Name">
+    <input name="price" value="{{ s.price|round(2) }}" inputmode="decimal" aria-label="Price">
+    <input name="currency" value="{{ s.currency }}" maxlength="8" aria-label="Currency">
+    <input name="supplier_sku" value="{{ s.supplier_sku or '' }}" placeholder="Supplier SKU" aria-label="Supplier SKU">
+    <input name="max_unit_cost" value="{{ s.max_unit_cost|round(2) if s.max_unit_cost is not none else '' }}" placeholder="Cost cap" aria-label="Cost cap">
+    <label class="inline"><input type="checkbox" name="is_active" value="1" {% if s.is_active %}checked{% endif %}> active</label>
+    <button class="btn btn-small">Save</button>
+    {% if product.fulfillment_method == 'auto_card' %}<a class="btn btn-small" href="/admin/skus/{{ s.id }}/codes">Codes ({{ stock.get(s.id, 0) }})</a>{% endif %}
+  </form>
+  {% endfor %}
+  <form method="post" action="/admin/products/{{ product.id }}/skus" class="skurow">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="name" placeholder="New SKU name" maxlength="120"><input name="price" placeholder="Price" inputmode="decimal"><input name="currency" value="USD" maxlength="8">
+    <input name="supplier_sku" placeholder="Supplier SKU"><input name="max_unit_cost" placeholder="Cost cap">
+    <input type="hidden" name="is_active" value="1"><button class="btn btn-small">Add</button>
+  </form>
+</section>
+
+<section class="card" id="images">
+  <h2>Images (optional)</h2>
+  <div class="thumbs">
+  {% for img in product.images %}
+    <form method="post" action="/admin/products/{{ product.id }}/images/{{ img.id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><img src="{{ img.url }}" alt="" width="96" height="96"><button class="btn btn-small" data-confirm="Remove image?">×</button></form>
+  {% endfor %}
+  </div>
+  <form method="post" action="/admin/products/{{ product.id }}/images" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
+    <input name="url" placeholder="…or https:// image URL" maxlength="500">
+    <input name="alt" placeholder="Alt text" maxlength="160">
+    <button class="btn btn-small">Add image</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.agents') }}</h1>
+{% for agent, user in agents %}
+<section class="card">
+  <div class="row-between"><strong>{{ agent.code }}</strong><span class="tag">{{ agent.status }}</span></div>
+  <p class="small">{{ user.email or user.display_name }} · rate {{ (agent.commission_rate * 100)|round(2) }}% · applied {{ agent.created_at.strftime('%Y-%m-%d') }}</p>
+  {% if agent.application_note %}<p class="small">{{ agent.application_note }}</p>{% endif %}
+  <form method="post" action="/admin/agents/{{ agent.id }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <select name="status">{% for s in ('active','rejected','suspended') %}<option {% if agent.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+    <input name="rate_percent" placeholder="Rate %" value="{{ (agent.commission_rate * 100)|round(2) }}">
+    <input name="note" placeholder="Admin note" value="{{ agent.admin_note }}">
+    <button class="btn btn-small">Save</button>
+  </form>
+</section>
+{% else %}<p class="muted">No agent applications.</p>{% endfor %}
+<h2>Commissions</h2>
+<div class="table-wrap"><table><thead><tr><th>Order</th><th>Agent</th><th>Base</th><th>Rate</th><th>Amount</th><th>Reversed</th><th>Status</th><th></th></tr></thead><tbody>
+{% for c in commissions %}<tr><td><a href="/admin/orders/{{ c.order_id }}">#{{ c.order_id }}</a></td><td>{{ c.agent_id }}</td><td>{{ c.base_amount|money(c.currency) }}</td><td>{{ c.rate }}</td><td>{{ c.amount|money(c.currency) }}</td><td>{{ c.reversed_amount|money(c.currency) }}</td><td>{{ c.status }}</td>
+<td>{% if c.status in ('pending','approved') %}<form method="post" action="/admin/commissions/{{ c.id }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small" name="status" value="{{ 'approved' if c.status == 'pending' else 'paid' }}">{{ 'Approve' if c.status == 'pending' else 'Mark paid' }}</button></form>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

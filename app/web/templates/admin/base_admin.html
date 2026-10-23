@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block body_class %}admin{% endblock %}
+{% block title %}Admin · {{ ss.store_name }}{% endblock %}
+{% block content %}
+<nav class="adminnav" aria-label="Admin">
+  <a href="/admin">{{ t('admin.dashboard') }}</a>
+  <a href="/admin/orders">{{ t('admin.orders') }}</a>
+  <a href="/admin/reviews">{{ t('admin.reviews') }}</a>
+  <a href="/admin/products">{{ t('admin.products') }}</a>
+  <a href="/admin/inventory">{{ t('admin.inventory') }}</a>
+  <a href="/admin/payments">{{ t('admin.payments') }}</a>
+  <a href="/admin/tickets">{{ t('admin.tickets') }}</a>
+  <a href="/admin/procurements">{{ t('admin.procurements') }}</a>
+  <a href="/admin/agents">{{ t('admin.agents') }}</a>
+  <a href="/admin/jobs">{{ t('admin.jobs') }}</a>
+  <a href="/admin/customers">{{ t('admin.customers') }}</a>
+  <a href="/admin/settings">{{ t('admin.settings') }}</a>
+  <a href="/admin/audit">{{ t('admin.audit') }}</a>
+</nav>
+{% if error %}<div class="alert">{{ error }}</div>{% endif %}
+{% block admin %}{% endblock %}
+{% endblock %}

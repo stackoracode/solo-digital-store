@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('staff.title') }}</h1>
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  <form method="post" action="/account/staff-login" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>{{ t('login.email') }}<input type="email" name="email" required maxlength="254" autocomplete="username"></label>
+    <label>{{ t('staff.password') }}<input type="password" name="password" required maxlength="200" autocomplete="current-password"></label>
+    {% include "partials/turnstile.html" %}
+    <button class="btn btn-primary btn-block">{{ t('staff.sign_in') }}</button>
+  </form>
+</section>
+{% endblock %}

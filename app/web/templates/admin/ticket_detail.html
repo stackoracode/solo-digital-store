@@ -1,0 +1,13 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ ticket.subject }}</h1>
+<p class="muted small">{{ ticket.ticket_no }} · {{ ticket.email }} · {{ ticket.status }}{% if ticket.order_id %} · <a href="/admin/orders/{{ ticket.order_id }}">order #{{ ticket.order_id }}</a>{% endif %}</p>
+<ol class="thread">{% for m in messages %}<li class="msg {{ m.author_type }}"><div class="meta">{{ m.author_type }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</div><div>{{ m.body|nl2br }}</div></li>{% endfor %}</ol>
+<form method="post" action="/admin/tickets/{{ ticket.id }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <textarea name="body" rows="4" maxlength="5000" placeholder="Reply (the customer is e-mailed a link)"></textarea>
+  <button class="btn btn-primary btn-small" name="action" value="reply">Send reply</button>
+  <button class="btn btn-small" name="action" value="close">Close ticket</button>
+</form>
+<p class="small muted">Never ask customers for passwords or payment credentials. Do not promise refunds before checking the order.</p>
+{% endblock %}

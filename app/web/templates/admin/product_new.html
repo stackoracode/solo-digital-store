@@ -1,0 +1,20 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('admin.quick_list') }}</h1>
+  <p class="muted small">{{ t('admin.quick_list_help') }}</p>
+  <form method="post" action="/admin/products/new" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('admin.f.title') }} *<input name="title" required maxlength="160" value="{{ values.get('title', '') }}"></label>
+    <label>{{ t('admin.f.price') }} (USD) *<input name="price" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" value="{{ values.get('price', '') }}" placeholder="9.99"></label>
+    <label>{{ t('admin.f.delivery') }} *
+      <select name="fulfillment_method">{% for m in methods %}<option value="{{ m }}" {% if values.get('fulfillment_method') == m %}selected{% endif %}>{{ t('fulfillment.' ~ m) }}</option>{% endfor %}</select>
+    </label>
+    <label>{{ t('admin.f.description') }}<textarea name="description" rows="5" maxlength="20000">{{ values.get('description', '') }}</textarea></label>
+    <label>{{ t('admin.f.category') }}<select name="category_id"><option value="">—</option>{% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+    <label>{{ t('admin.f.image_optional') }}<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+    <label class="inline"><input type="checkbox" name="publish" value="1" checked> {{ t('admin.f.publish_now') }}</label>
+    <button class="btn btn-primary btn-block">{{ t('admin.f.list_it') }}</button>
+  </form>
+</section>
+{% endblock %}

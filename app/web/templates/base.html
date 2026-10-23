@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="{{ locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>{% block title %}{{ ss.store_name or 'Store' }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ ss.tagline }}{% endblock %}">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/app.js" defer></script>
+  {% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="topbar">
+    <a class="brand" href="/">{{ ss.store_name or 'Store' }}</a>
+    <nav class="topnav">
+      <a href="/lookup">{{ t('nav.find_order') }}</a>
+      <a href="/support">{{ t('nav.support') }}</a>
+      {% if viewer and viewer.user %}
+        {% if viewer.is_admin %}<a href="/admin">{{ t('nav.admin') }}</a>{% else %}<a href="/account">{{ t('nav.account') }}</a>{% endif %}
+      {% else %}
+        <a href="/account/login">{{ t('nav.sign_in') }}</a>
+      {% endif %}
+      <a class="lang" href="?lang={{ 'en-US' if locale == 'zh-CN' else 'zh-CN' }}">{{ 'EN' if locale == 'zh-CN' else '中文' }}</a>
+    </nav>
+  </header>
+  {% if ss.announcement %}<div class="announce">{{ ss.announcement }}</div>{% endif %}
+  {% if app_env != 'production' %}<div class="envbar">{{ t('env.notice', env=app_env) }}</div>{% endif %}
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <div><a href="/legal/terms">{{ t('legal.terms') }}</a> · <a href="/legal/privacy">{{ t('legal.privacy') }}</a> · <a href="/legal/refund">{{ t('legal.refund') }}</a></div>
+    <div class="muted">{{ t('footer.support', email=ss.support_email) }} · {{ ss.support_hours }}</div>
+  </footer>
+</body>
+</html>

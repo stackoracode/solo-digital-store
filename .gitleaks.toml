@@ -1,0 +1,8 @@
+# Extends the default gitleaks rules. Only public, on-chain token contract addresses are allow-listed.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public ERC-20 token contract addresses (not secrets)"
+paths = ['''^config/usdt_networks\.json$''']
+regexes = ['''0x[0-9a-fA-F]{40}''']

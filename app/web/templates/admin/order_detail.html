@@ -1,0 +1,59 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<div class="row-between"><h1 class="h2">{{ order.order_no }}</h1><span class="muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M UTC') }} · IP {{ order.client_ip }}</span></div>
+{% include "partials/status.html" %}
+<div class="cols">
+<section class="card">
+  <h2>Summary</h2>
+  <ul class="facts">
+    <li><span>E-mail</span><strong>{{ order.email }}</strong></li>
+    <li><span>User</span><strong>{{ order.user_id or 'guest' }}</strong></li>
+    <li><span>Agent</span><strong>{{ order.agent_id or '—' }}</strong></li>
+    <li><span>Total</span><strong>{{ order.total|money(order.currency) }}</strong></li>
+    <li><span>Refunded</span><strong>{{ order.refunded_total|money(order.currency) }}</strong></li>
+    <li><span>Fees / cost</span><strong>{{ order.fee_total|money(order.currency) }} / {{ order.cost_total|money(order.currency) }}</strong></li>
+    <li><span>Lifecycle</span><strong>{{ order.lifecycle }}</strong></li>
+  </ul>
+  {% for item in order.items %}
+  <h3>{{ item.snapshot.product_title }} · {{ item.snapshot.sku_name }} × {{ item.quantity }}</h3>
+  <p class="small">{{ item.fulfillment_method }} · {{ item.fulfillment_status }} · delivered {{ item.delivered_quantity }}/{{ item.quantity }} · form v{{ item.snapshot.form_version or '-' }}</p>
+  {% if item.form_data %}<ul class="facts">{% for k, v in item.form_data.items() %}<li><span>{{ k }}</span><strong>{{ v if v is string else v|join(', ') }}</strong></li>{% endfor %}</ul>{% endif %}
+  {% if item.fulfillment_status != 'delivered' and order.payment_status == 'paid' %}
+  <form method="post" action="/admin/orders/{{ order.id }}/deliver">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="item_id" value="{{ item.id }}">
+    <textarea name="content" rows="3" required placeholder="Delivery content shown to the customer (code, link, instructions)"></textarea>
+    <button class="btn btn-primary btn-small" data-confirm="Deliver this content to the customer?">Deliver manually</button>
+  </form>
+  {% endif %}
+  {% endfor %}
+  {% if order.payment_status == 'paid' and order.fulfillment_status in ('awaiting_stock', 'needs_review') %}
+  <form method="post" action="/admin/orders/{{ order.id }}/retry-fulfillment"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small">Retry automatic fulfilment</button></form>
+  {% endif %}
+  <p>{% if revealed %}{% for d in deliveries %}<code class="secret break">{{ d.content }}</code><br>{% endfor %}{% else %}<a class="btn btn-small" href="?reveal=1">Reveal delivered content (audited)</a>{% endif %}</p>
+</section>
+<section class="card">
+  <h2>Payments</h2>
+  <ul class="list">{% for a in attempts %}<li><code>{{ a.attempt_no }}</code> {{ a.channel_code }} {% if a.is_live %}<span class="tag">LIVE</span>{% else %}<span class="tag">TEST</span>{% endif %} · {{ a.pay_amount }} {{ a.pay_currency }} · <strong>{{ a.status }}</strong>{% if a.is_duplicate %} <span class="tag warn">DUPLICATE</span>{% endif %}{% if a.received_amount %} · recv {{ a.received_amount }}{% endif %}{% if a.fx_rate %} · fx {{ a.fx_rate }} ({{ a.fx_source }}){% endif %}{% if a.error_message %}<br><span class="err small">{{ a.error_message }}</span>{% endif %}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+  <h3>Refund</h3>
+  <form method="post" action="/admin/orders/{{ order.id }}/refund">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <select name="attempt_id">{% for a in attempts if a.status == 'succeeded' %}<option value="{{ a.id }}" {% if a.id == order.paid_attempt_id %}selected{% endif %}>{{ a.attempt_no }} ({{ a.amount - a.refunded_amount }} {{ a.currency }} refundable)</option>{% endfor %}</select>
+    <input name="amount" placeholder="Amount" inputmode="decimal" required>
+    <input name="reason" placeholder="Reason" maxlength="1000">
+    <button class="btn btn-small" data-confirm="Refund this amount? Undelivered items will be cancelled.">Request refund</button>
+  </form>
+  <ul class="list">{% for r in refunds %}<li>{{ r.refund_no }} · {{ r.amount }} {{ r.currency }} · <strong>{{ r.status }}</strong>{% if r.error %} · {{ r.error }}{% endif %}
+    {% if r.status == 'manual_required' %}<form method="post" action="/admin/refunds/{{ r.id }}/manual-done"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input name="reference" placeholder="Tx hash / reference" required><button class="btn btn-small">Mark refunded</button></form>{% endif %}</li>{% endfor %}</ul>
+  {% if procurements %}<h3>Procurement</h3>
+  <ul class="list">{% for p in procurements %}<li>#{{ p.id }} {{ p.supplier_code }}/{{ p.supplier_sku }} · {{ p.status }} · key {{ p.idempotency_key }} · upstream {{ p.supplier_order_no or '—' }} · submits {{ p.submit_count }} · queries {{ p.query_count }}</li>{% endfor %}</ul>{% endif %}
+</section>
+</div>
+<section class="card">
+  <h2>Review items</h2>
+  <ul class="list">{% for r in reviews %}<li><span class="tag">{{ r.kind }}</span> {{ r.status }} · {{ r.summary }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+  <h2>Timeline</h2>
+  <ol class="timeline">{% for e in events %}<li><time>{{ e.created_at.strftime('%m-%d %H:%M:%S') }}</time> <strong>{{ e.kind }}</strong> {{ e.message }}{% if not e.visible_to_customer %} <span class="tag">internal</span>{% endif %}</li>{% endfor %}</ol>
+  <form method="post" action="/admin/orders/{{ order.id }}/note"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="note" placeholder="Add note" maxlength="2000"><label class="inline"><input type="checkbox" name="visible" value="1"> visible to customer</label><button class="btn btn-small">Add</button></form>
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+# Development / validation stack. Payments are simulated; no real money moves.
+#   cp .env.example .env && docker compose up --build
+#   docker compose exec web python -m app.cli seed-demo
+#   docker compose exec -T web python -m app.cli create-admin you@example.com <<< 'a-long-password-here'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: store
+      POSTGRES_PASSWORD: store
+      POSTGRES_DB: store
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025"]
+  migrate:
+    build: .
+    env_file: .env
+    command: sh -c "alembic upgrade head && python -m app.cli bootstrap"
+    depends_on:
+      db: {condition: service_healthy}
+  web:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_started}
+  worker:
+    build: .
+    env_file: .env
+    command: ["python", "-m", "app.jobs.worker"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+volumes:
+  pgdata:

@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults: { run: { shell: bash -el {0} } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: solostore
+          miniforge-version: latest
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+      - name: Type check
+        run: mypy
+      - name: Locale catalogs are generated from source
+        run: python scripts/build_locales.py && git diff --exit-code app/locales
+
+  test:
+    runs-on: ubuntu-latest
+    defaults: { run: { shell: bash -el {0} } }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: store, POSTGRES_PASSWORD: store, POSTGRES_DB: store_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U store" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://store:store@localhost:5432/store_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: solostore
+          miniforge-version: latest
+      - name: Unit + integration tests (payments, card codes, refunds, commissions, security)
+        run: pytest --cov=app --cov-report=term-missing:skip-covered --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: coverage, path: coverage.xml, if-no-files-found: ignore }
+
+  migrations:
+    runs-on: ubuntu-latest
+    defaults: { run: { shell: bash -el {0} } }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: store, POSTGRES_PASSWORD: store, POSTGRES_DB: store }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U store" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://store:store@localhost:5432/store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: solostore
+          miniforge-version: latest
+      - name: Apply migrations, verify models match, round-trip downgrade
+        run: |
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head
+          python -m app.cli bootstrap
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Dependency vulnerability audit
+        run: pip install pip-audit==2.10.1 && pip-audit -r requirements.txt --strict
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t solo-digital-store:ci .

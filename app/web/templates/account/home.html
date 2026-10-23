@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div class="row-between">
+    <h1 class="h2">{{ t('account.title') }}</h1>
+    <form method="post" action="/account/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small">{{ t('account.logout') }}</button></form>
+  </div>
+  <p class="muted">{{ user.email or user.display_name }}{% for i in identities %} · <span class="tag">{{ i.provider }}</span>{% endfor %}</p>
+  {% if unclaimed %}
+  <form method="post" action="/account/claim-orders"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-block">{{ t('account.claim_orders', n=unclaimed) }}</button></form>
+  {% endif %}
+</section>
+<section class="card">
+  <h2>{{ t('account.orders') }}</h2>
+  {% if orders %}
+  <ul class="list">
+    {% for o in orders %}
+    <li><a href="/o/{{ o.order_no }}">{{ o.order_no }}</a> · {{ o.total|money(o.currency) }} · {{ t('status.payment.' ~ o.payment_status) }} / {{ t('status.fulfillment.' ~ o.fulfillment_status) }} <span class="muted small">{{ o.created_at.strftime('%Y-%m-%d') }}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('account.no_orders') }}</p>{% endif %}
+</section>
+<section class="card">
+  <h2>{{ t('account.profile') }}</h2>
+  <form method="post" action="/account/profile">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('account.display_name') }}<input name="display_name" value="{{ user.display_name }}" maxlength="80"></label>
+    <label>{{ t('account.language') }}<select name="locale">{% for l in SUPPORTED_LOCALES %}<option value="{{ l }}" {% if user.locale == l %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+    <button class="btn">{{ t('common.save') }}</button>
+  </form>
+  <p><a href="/agent">{{ t('account.agent_program') }}</a></p>
+</section>
+{% endblock %}

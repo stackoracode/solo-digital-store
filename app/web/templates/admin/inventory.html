@@ -1,0 +1,11 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.inventory') }}</h1>
+<div class="table-wrap"><table>
+  <thead><tr><th>Product</th><th>SKU</th><th>Available</th><th>Sold</th><th>Void</th><th>Alert at</th></tr></thead>
+  <tbody>{% for r in report %}
+  <tr class="{% if r.low %}low{% endif %}"><td><a href="/admin/products/{{ r.product_id }}">{{ r.product }}</a></td><td><a href="/admin/skus/{{ r.sku_id }}/codes">{{ r.sku }}</a></td>
+    <td>{{ r.available }}</td><td>{{ r.sold }}</td><td>{{ r.void }}</td><td>{{ r.threshold }}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">No card-code products.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

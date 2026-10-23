@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1 class="h2">{{ ticket.subject }}</h1>
+  <p class="muted small">{{ ticket.ticket_no }} · {{ t('ticket.status.' ~ ticket.status) }}</p>
+  <ol class="thread">
+    {% for m in messages %}
+    <li class="msg {{ m.author_type }}"><div class="meta">{{ t('ticket.author.' ~ m.author_type) }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</div><div>{{ m.body|nl2br }}</div></li>
+    {% endfor %}
+  </ol>
+  <form method="post" action="/support/t/{{ ticket.ticket_no }}{% if t %}?t={{ t }}{% elif k %}?k={{ k }}{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <textarea name="body" rows="3" required maxlength="5000" placeholder="{{ t('ticket.reply') }}"></textarea>
+    <button class="btn btn-primary btn-block">{{ t('support.send') }}</button>
+  </form>
+  <p class="small muted">{{ t('ticket.bookmark') }}</p>
+</section>
+{% endblock %}

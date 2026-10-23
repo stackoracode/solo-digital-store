@@ -1,0 +1,6 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.tickets') }}</h1>
+<p class="filters">{% for s in ('open','answered','closed') %}<a class="chip {% if status == s %}active{% endif %}" href="?status={{ s }}">{{ s }}</a>{% endfor %}</p>
+<ul class="list">{% for tk in tickets %}<li><a href="/admin/tickets/{{ tk.id }}">{{ tk.subject }}</a> · <span class="tag">{{ tk.category }}</span> · {{ tk.email }}{% if tk.order_id %} · <a href="/admin/orders/{{ tk.order_id }}">order #{{ tk.order_id }}</a>{% endif %} · {{ tk.updated_at.strftime('%m-%d %H:%M') }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+{% endblock %}

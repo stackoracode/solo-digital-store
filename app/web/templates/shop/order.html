@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ t('order.title', no=order.order_no) }}{% endblock %}
+{% block content %}
+<section class="card" id="order" data-status-url="/api/orders/{{ order.order_no }}/status" data-payment="{{ order.payment_status }}" data-fulfillment="{{ order.fulfillment_status }}">
+  <div class="row-between">
+    <h1 class="h2">{{ t('order.title', no=order.order_no) }}</h1>
+  </div>
+  {% include "partials/status.html" %}
+  {% if returned and order.payment_status == 'unpaid' %}<div class="alert info">{{ t('order.returned_processing') }}</div>{% endif %}
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  {% if item %}
+  <ul class="facts">
+    <li><span>{{ t('order.item') }}</span><strong>{{ item.snapshot.product_title }} · {{ item.snapshot.sku_name }} × {{ item.quantity }}</strong></li>
+    <li><span>{{ t('order.total') }}</span><strong>{{ order.total|money(order.currency) }}</strong></li>
+    <li><span>{{ t('product.delivery_method') }}</span><strong>{{ t('fulfillment.' ~ item.fulfillment_method) }}</strong></li>
+    <li><span>{{ t('order.email') }}</span><strong>{{ order.email }}</strong></li>
+  </ul>
+  {% endif %}
+</section>
+
+{% if order.payment_status == 'unpaid' and order.lifecycle == 'pending_payment' %}
+  {% if usdt %}
+  <section class="card usdt">
+    <h2>{{ t('usdt.title', token=usdt.network.token_symbol, network=usdt.network.display_name) }}</h2>
+    <div class="alert warn">{{ t('usdt.warning', token=usdt.network.token_symbol, network=usdt.network.display_name) }}</div>
+    <ul class="facts">
+      <li><span>{{ t('usdt.network') }}</span><strong>{{ usdt.network.display_name }} (Chain ID {{ usdt.network.chain_id }})</strong></li>
+      <li><span>{{ t('usdt.token') }}</span><strong>{{ usdt.network.token_symbol }}</strong></li>
+      <li><span>{{ t('usdt.contract') }}</span><code class="break">{{ usdt.network.token_contract }}</code></li>
+      <li><span>{{ t('usdt.amount') }}</span><strong class="big">{{ usdt.remaining }} {{ usdt.network.token_symbol }}</strong> <button type="button" class="btn btn-small" data-copy="{{ usdt.remaining }}">{{ t('common.copy') }}</button></li>
+      <li><span>{{ t('usdt.expires') }}</span><strong data-utc="{{ active_attempt.expires_at.isoformat() }}">{{ active_attempt.expires_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong></li>
+    </ul>
+    <div class="qr"><img src="{{ usdt.qr }}" alt="{{ t('usdt.qr_alt') }}" width="200" height="200"></div>
+    <p class="center"><code class="break addr">{{ usdt.address }}</code><br><button type="button" class="btn btn-small" data-copy="{{ usdt.address }}">{{ t('usdt.copy_address') }}</button></p>
+    {% if usdt.received > 0 %}<p>{{ t('usdt.received', amount=usdt.received) }}</p>{% endif %}
+    {% if usdt.transfers %}
+    <ul class="list">
+      {% for tx in usdt.transfers %}<li><a href="{{ tx.url }}" rel="noopener noreferrer" target="_blank">{{ tx.tx[:10] }}…</a> · {{ tx.amount }} · {{ t('chain.' ~ tx.status) }} · {{ t('usdt.confirmations', n=tx.confirmations, need=usdt.network.confirmations) }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <p class="small muted">{{ t('usdt.auto_detect', n=usdt.network.confirmations) }}</p>
+    <p class="small muted">{{ t('usdt.help') }} <a href="#support">{{ t('nav.support') }}</a></p>
+  </section>
+  {% elif active_attempt and active_attempt.checkout_url %}
+  <section class="card">
+    <a class="btn btn-primary btn-block" href="{{ active_attempt.checkout_url }}" rel="noopener">{{ t('order.continue_payment') }}</a>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>{{ t('order.choose_payment') }}</h2>
+    {% if usable_channels %}
+    <form method="post" action="/o/{{ order.order_no }}/pay" class="paylist">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% for ch in usable_channels %}
+      <button class="btn btn-block {% if loop.first %}btn-primary{% endif %}" name="channel" value="{{ ch.code }}">{{ ch.display_name }}{% if ch.mode == 'test' %} <span class="tag">TEST</span>{% endif %}</button>
+      {% endfor %}
+    </form>
+    {% else %}
+    <p class="muted">{{ t('order.no_channels') }}</p>
+    {% endif %}
+    <p class="small muted">{{ t('order.pay_before', at=order.expires_at.strftime('%Y-%m-%d %H:%M UTC')) }}</p>
+  </section>
+{% endif %}
+
+{% if deliveries %}
+<section class="card">
+  <h2>{{ t('order.your_items') }}</h2>
+  <ul class="deliveries">
+    {% for d in deliveries %}
+    <li><code class="secret break">{{ d.content }}</code> <button type="button" class="btn btn-small" data-copy="{{ d.content }}">{{ t('common.copy') }}</button></li>
+    {% endfor %}
+  </ul>
+  <p class="small muted">{{ t('order.keep_safe') }}</p>
+</section>
+{% elif order.payment_status == 'paid' %}
+<section class="card"><p>{{ t('order.fulfillment_wait.' ~ order.fulfillment_status) }}</p></section>
+{% endif %}
+
+{% if events %}
+<section class="card">
+  <h2>{{ t('order.timeline') }}</h2>
+  <ol class="timeline">{% for e in events %}<li><time>{{ e.created_at.strftime('%m-%d %H:%M') }}</time> {% if e.kind == 'note' %}{{ e.message }}{% else %}{{ t('event.' ~ e.kind) }}{% endif %}</li>{% endfor %}</ol>
+</section>
+{% endif %}
+
+{% if viewer and viewer.user and not order.user_id %}
+<section class="card">
+  <form method="post" action="/o/{{ order.order_no }}/claim"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-block">{{ t('order.claim') }}</button></form>
+</section>
+{% elif not (viewer and viewer.user) and order.paid_at %}
+<section class="card soft">
+  <p>{{ t('order.register_prompt') }}</p>
+  <a class="btn btn-block" href="/account/login?next=/o/{{ order.order_no }}">{{ t('order.register_cta') }}</a>
+</section>
+{% endif %}
+
+<section class="card" id="support">
+  <h2>{{ t('order.need_help') }}</h2>
+  <form method="post" action="/o/{{ order.order_no }}/ticket">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="subject" maxlength="160" placeholder="{{ t('support.subject') }}">
+    <textarea name="body" rows="3" maxlength="5000" required placeholder="{{ t('support.describe') }}"></textarea>
+    <button class="btn btn-block">{{ t('support.send') }}</button>
+  </form>
+</section>
+{% endblock %}

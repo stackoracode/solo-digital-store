@@ -1,0 +1,55 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.settings') }}</h1>
+<form method="post" action="/admin/settings" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% for k in keys %}{% set v = values[k] %}
+    {% if v is sameas true or v is sameas false %}
+      <label class="inline"><input type="checkbox" name="{{ k }}" value="1" {% if v %}checked{% endif %}> {{ k }}</label>
+    {% elif k in ('default_refund_policy', 'terms_text', 'privacy_text', 'support_contacts') %}
+      <label>{{ k }}<textarea name="{{ k }}" rows="4">{{ v }}</textarea></label>
+    {% else %}
+      <label>{{ k }}<input name="{{ k }}" value="{{ v }}"></label>
+    {% endif %}
+  {% endfor %}
+  <p class="small muted">Terms, privacy and refund texts must be reviewed for your actual sales regions and product types before going live.</p>
+  <button class="btn btn-primary">Save settings</button>
+</form>
+
+<section class="card" id="categories">
+  <h2>Categories</h2>
+  {% for c in categories %}
+  <form method="post" action="/admin/categories" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="category_id" value="{{ c.id }}">
+    <input name="name" value="{{ c.name }}"><input name="name_zh" value="{{ c.translations.get('zh-CN', {}).get('name', '') }}" placeholder="中文名"><input name="sort" value="{{ c.sort }}" inputmode="numeric">
+    <select name="is_active"><option value="1" {% if c.is_active %}selected{% endif %}>active</option><option value="0" {% if not c.is_active %}selected{% endif %}>hidden</option></select><button class="btn btn-small">Save</button></form>
+  {% endfor %}
+  <form method="post" action="/admin/categories" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="name" placeholder="New category" required><input name="name_zh" placeholder="中文名"><input name="slug" placeholder="slug"><button class="btn btn-small">Add</button></form>
+</section>
+
+<section class="card" id="ai">
+  <h2>AI providers (configuration only)</h2>
+  <p class="small muted">Endpoints must be https and on the server allowlist ({{ allowlist|join(', ') }}); private addresses are rejected. API keys are encrypted, write-only and never shown. Verify model IDs against the provider's current official documentation. AI must never confirm payments, promise refunds, or act without human review.</p>
+  <ul class="list">{% for p in providers %}<li><strong>{{ p.name }}</strong> · {{ p.kind }} · {{ p.base_url }} · {{ p.model_id }} · key ••••{{ p.api_key_last4 }} · {{ 'enabled' if p.enabled else 'disabled' }} · {{ p.tasks|join(', ') }}</li>{% endfor %}</ul>
+  <form method="post" action="/admin/ai-providers" class="grid-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Name<input name="name" required maxlength="60"></label>
+    <label>Kind<select name="kind">{% for k in ai_kinds %}<option>{{ k }}</option>{% endfor %}</select></label>
+    <label>Base URL<input name="base_url" required placeholder="https://api.openai.com/v1"></label>
+    <label>Model ID<input name="model_id" required></label>
+    <label>API key (write-only)<input name="api_key" type="password" autocomplete="off"></label>
+    <label>Timeout (s)<input name="timeout_seconds" value="30"></label>
+    <label>Max tokens<input name="max_tokens" value="1024"></label>
+    <div>{% for task in ai_tasks %}<label class="inline"><input type="checkbox" name="tasks" value="{{ task }}"> {{ task }}</label>{% endfor %}</div>
+    <label class="inline"><input type="checkbox" name="enabled" value="1"> enabled</label>
+    <button class="btn btn-small">Save provider</button>
+  </form>
+</section>
+
+<section class="card" id="domains">
+  <h2>Custom domains (future agent storefronts)</h2>
+  <p class="small muted">Only verified domains are routed; unknown Host headers are rejected. Verification via DNS TXT / Cloudflare for SaaS is not automated yet.</p>
+  <ul class="list">{% for d in domains %}<li>{{ d.hostname }} · {{ d.status }} · TXT <code>store-verify={{ d.verification_token }}</code>
+    {% if d.status != 'disabled' %}<form method="post" action="/admin/domains/{{ d.id }}/status" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small" name="status" value="disabled">Disable</button></form>{% endif %}</li>{% endfor %}</ul>
+  <form method="post" action="/admin/domains" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input name="hostname" placeholder="shop.example.com" required><button class="btn btn-small">Add domain</button></form>
+</section>
+{% endblock %}

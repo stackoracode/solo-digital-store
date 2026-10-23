@@ -1,0 +1,7 @@
+{# Usage: include with order in context #}
+<div class="badges">
+  <span class="badge pay-{{ order.payment_status }}">{{ t('status.payment.' ~ order.payment_status) }}</span>
+  <span class="badge ful-{{ order.fulfillment_status }}">{{ t('status.fulfillment.' ~ order.fulfillment_status) }}</span>
+  {% if order.after_sale_status != 'none' %}<span class="badge">{{ t('status.after_sale.' ~ order.after_sale_status) }}</span>{% endif %}
+  {% if order.lifecycle in ('expired', 'canceled') %}<span class="badge warn">{{ t('status.lifecycle.' ~ order.lifecycle) }}</span>{% endif %}
+</div>

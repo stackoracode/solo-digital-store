@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="card prose">
+  <h1 class="h2">{{ t('legal.' ~ page) }}</h1>
+  {% if page == 'terms' %}{{ (ss.terms_text or t('legal.terms_default'))|nl2br }}
+  {% elif page == 'privacy' %}{{ (ss.privacy_text or t('legal.privacy_default'))|nl2br }}
+  {% else %}{{ ss.default_refund_policy|nl2br }}{% endif %}
+  <p class="small muted">{{ t('legal.review_note') }}</p>
+</article>
+{% endblock %}

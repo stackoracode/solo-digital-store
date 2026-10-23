@@ -1,0 +1,7 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">On-chain transfers</h1>
+<div class="table-wrap"><table><thead><tr><th>Network</th><th>Tx</th><th>Block</th><th>To</th><th>Amount</th><th>Conf.</th><th>Status</th><th>Attempt</th><th>Note</th></tr></thead><tbody>
+{% for tx in transfers %}{% set net = networks.get(tx.network) %}<tr><td>{{ tx.network }}</td><td><a href="{{ net.tx_url(tx.tx_hash) if net else '#' }}" rel="noopener noreferrer" target="_blank">{{ tx.tx_hash[:12] }}…</a>:{{ tx.log_index }}</td><td>{{ tx.block_number }}</td><td class="small">{{ tx.to_address }}</td><td>{{ tx.amount }}</td><td>{{ tx.confirmations }}</td><td>{{ tx.status }}</td><td>{{ tx.attempt_id or '' }}</td><td class="small">{{ tx.note }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

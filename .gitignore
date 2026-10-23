@@ -1,0 +1,45 @@
+# Secrets & local config — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+*mnemonic*
+*seed*phrase*
+*.keystore
+
+# Runtime data (orders, card codes, uploads, logs)
+var/
+*.log
+logs/
+*.sqlite
+*.db
+dump*.sql
+*.csv
+!tests/fixtures/*.csv
+
+# Python / tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local requirement drafts
+1.txt

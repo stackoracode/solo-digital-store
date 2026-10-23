@@ -1,0 +1,10 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.jobs') }}</h1>
+<p class="filters">{% for s in ('dead','queued','running','succeeded') %}<a class="chip {% if status == s %}active{% endif %}" href="?status={{ s }}">{{ s }}</a>{% endfor %}</p>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Kind</th><th>Status</th><th>Attempts</th><th>Run at</th><th>Last error</th><th></th></tr></thead><tbody>
+{% for j in jobs %}<tr><td>{{ j.id }}</td><td>{{ j.kind }}</td><td>{{ j.status }}</td><td>{{ j.attempts }}/{{ j.max_attempts }}</td><td>{{ j.run_at.strftime('%m-%d %H:%M:%S') }}</td><td class="small">{{ j.last_error[:200] }}</td>
+<td>{% if j.status in ('dead','canceled') %}<form method="post" action="/admin/jobs/{{ j.id }}/retry"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small" data-confirm="Re-run this job? Handlers are idempotent.">Retry</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="muted">—</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

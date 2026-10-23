@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ product.title }} · {{ sku.name }} — codes</h1>
+<p>Available {{ counts.get('available', 0) }} · Sold {{ counts.get('sold', 0) }} · Void {{ counts.get('void', 0) }}</p>
+{% if result %}<div class="alert info">{{ result }}</div>{% endif %}
+<section class="card">
+  <h2>Import</h2>
+  <p class="small muted">One code per line (max 10,000). Duplicates (already in this SKU or repeated in the file) are skipped. Codes are encrypted at rest. Only import codes you are authorised to sell.</p>
+  <form method="post" action="/admin/skus/{{ sku.id }}/codes/import" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="label" placeholder="Batch label (e.g. supplier invoice #)" maxlength="120">
+    <textarea name="codes" rows="6" placeholder="CODE-1&#10;CODE-2"></textarea>
+    <input type="file" name="file" accept=".txt,.csv,text/plain">
+    <button class="btn btn-primary">Import</button>
+  </form>
+</section>
+<section class="card">
+  <h2>Export (owner, audited)</h2>
+  <a class="btn btn-small" href="/admin/skus/{{ sku.id }}/codes/export?status=available">Available CSV</a>
+  <a class="btn btn-small" href="/admin/skus/{{ sku.id }}/codes/export?status=sold">Sold CSV</a>
+</section>
+<section class="card">
+  <h2>Batches</h2>
+  <ul class="list">{% for b in batches %}<li>#{{ b.id }} {{ b.label }} · +{{ b.imported_count }} · dup {{ b.duplicate_count }} · {{ b.created_at.strftime('%Y-%m-%d %H:%M') }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+</section>
+<section class="card">
+  <h2>Latest codes (masked)</h2>
+  <div class="table-wrap"><table><thead><tr><th>ID</th><th>Code</th><th>Status</th><th>Batch</th><th>Sold</th><th></th></tr></thead><tbody>
+  {% for c in codes %}<tr><td>{{ c.id }}</td><td><code>{{ c.masked }}</code></td><td>{{ c.status }}</td><td>{{ c.batch_id }}</td><td>{{ c.sold_at.strftime('%m-%d %H:%M') if c.sold_at else '' }}</td>
+    <td>{% if c.status == 'available' %}<form method="post" action="/admin/codes/{{ c.id }}/void"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-small" data-confirm="Void this code?">Void</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

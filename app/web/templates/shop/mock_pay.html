@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">Simulated payment (development only)</h1>
+  <p>Attempt <code>{{ attempt.attempt_no }}</code> · {{ attempt.pay_amount|money(attempt.pay_currency) }}</p>
+  <p class="muted small">This page sends a signed mock webhook through the same verification path as a real provider. It is disabled in production.</p>
+  <form method="post" action="/pay/mock/{{ attempt.attempt_no }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-primary btn-block" name="outcome" value="success">Simulate success</button>
+    <button class="btn btn-block" name="outcome" value="failure">Simulate failure</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>{{ ss.tagline }}</h1>
+  <form class="search" action="/" method="get" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="{{ t('shop.search_placeholder') }}" maxlength="80" aria-label="{{ t('shop.search') }}">
+    <button class="btn">{{ t('shop.search') }}</button>
+  </form>
+  {% if categories %}
+  <div class="chips">
+    <a class="chip {% if not active_category %}active{% endif %}" href="/">{{ t('shop.all') }}</a>
+    {% for c in categories %}
+    <a class="chip {% if active_category and active_category.id == c.id %}active{% endif %}" href="/c/{{ c.slug }}">{{ (c.translations.get(locale, {}).get('name')) or c.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% if cards %}
+<section class="grid">
+  {% for card in cards %}{% set p = card.product %}
+  <a class="tile" href="/p/{{ p.slug }}">
+    {% if card.image %}<img src="{{ card.image }}" alt="{{ p.tr('title', locale) }}" loading="lazy" width="320" height="320">{% else %}<div class="ph">{{ p.tr('title', locale)[:1] }}</div>{% endif %}
+    <div class="tile-body">
+      <div class="tile-title">{{ p.tr('title', locale) }}</div>
+      <div class="tile-meta">
+        {% if card.price %}<strong>{{ card.price[0]|money(card.price[1]) }}</strong>{% endif %}
+        <span class="tag">{{ t('fulfillment.' ~ p.fulfillment_method) }}</span>
+      </div>
+      {% if not card.in_stock %}<div class="muted small">{{ t('shop.out_of_stock') }}</div>{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</section>
+{% else %}
+<p class="card center muted">{{ t('shop.no_products') }}</p>
+{% endif %}
+{% endblock %}

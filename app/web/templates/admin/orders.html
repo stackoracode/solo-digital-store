@@ -1,0 +1,17 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">{{ t('admin.orders') }}</h1>
+<form class="filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Order no. or e-mail">
+  <select name="status"><option value="">All</option>{% for s in ('unpaid','paid','refund_pending','partially_refunded','refunded','awaiting_manual','awaiting_stock','awaiting_supplier','needs_review','delivered') %}<option {% if status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <button class="btn btn-small">Filter</button>
+</form>
+<div class="table-wrap"><table>
+  <thead><tr><th>Order</th><th>Created</th><th>E-mail</th><th>Total</th><th>Payment</th><th>Fulfilment</th><th>After-sale</th></tr></thead>
+  <tbody>{% for o in orders %}
+  <tr><td><a href="/admin/orders/{{ o.id }}">{{ o.order_no }}</a></td><td>{{ o.created_at.strftime('%m-%d %H:%M') }}</td><td>{{ o.email }}</td><td>{{ o.total|money(o.currency) }}</td>
+    <td><span class="badge pay-{{ o.payment_status }}">{{ o.payment_status }}</span></td><td><span class="badge ful-{{ o.fulfillment_status }}">{{ o.fulfillment_status }}</span></td><td>{{ o.after_sale_status }}</td></tr>
+  {% else %}<tr><td colspan="7" class="muted">No orders.</td></tr>{% endfor %}</tbody>
+</table></div>
+<p>{% if page > 1 %}<a href="?q={{ q }}&status={{ status }}&page={{ page - 1 }}">← Prev</a>{% endif %} {% if orders|length == 50 %}<a href="?q={{ q }}&status={{ status }}&page={{ page + 1 }}">Next →</a>{% endif %}</p>
+{% endblock %}

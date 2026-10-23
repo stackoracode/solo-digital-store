@@ -1,0 +1,35 @@
+{
+  "_comment": "Re-verify every value against official sources before enabling live mode. The app also checks eth_chainId and decimals() over RPC before a network can be marked verified. Sources: docs.usdt0.to/technical-documentation/deployments (checked 2026-10-23), web3.okx.com/xlayer/docs.",
+  "networks": {
+    "xlayer": {
+      "display_name": "X Layer",
+      "chain_id": 196,
+      "gas_token": "OKB",
+      "rpc_urls": ["https://rpc.xlayer.tech", "https://xlayerrpc.okx.com"],
+      "explorer_tx_url": "https://www.oklink.com/xlayer/tx/{tx}",
+      "explorer_address_url": "https://www.oklink.com/xlayer/address/{address}",
+      "token_symbol": "USDT0",
+      "token_contract": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_decimals": 6,
+      "confirmations": 20,
+      "reorg_depth": 30,
+      "max_block_range": 1000,
+      "start_block": 0
+    },
+    "polygon": {
+      "display_name": "Polygon PoS",
+      "chain_id": 137,
+      "gas_token": "POL",
+      "rpc_urls": ["https://polygon-rpc.com"],
+      "explorer_tx_url": "https://polygonscan.com/tx/{tx}",
+      "explorer_address_url": "https://polygonscan.com/address/{address}",
+      "token_symbol": "USDT0",
+      "token_contract": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+      "token_decimals": 6,
+      "confirmations": 64,
+      "reorg_depth": 128,
+      "max_block_range": 500,
+      "start_block": 0
+    }
+  }
+}

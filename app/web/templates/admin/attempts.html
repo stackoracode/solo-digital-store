@@ -1,0 +1,7 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">Payment attempts</h1>
+<div class="table-wrap"><table><thead><tr><th>Attempt</th><th>Order</th><th>Channel</th><th>Amount</th><th>Pay</th><th>Received</th><th>Status</th><th>Expires</th><th>Provider ref</th></tr></thead><tbody>
+{% for a in attempts %}<tr><td><code>{{ a.attempt_no }}</code></td><td><a href="/admin/orders/{{ a.order_id }}">#{{ a.order_id }}</a></td><td>{{ a.channel_code }}{% if a.is_live %} LIVE{% endif %}</td><td>{{ a.amount }} {{ a.currency }}</td><td>{{ a.pay_amount }} {{ a.pay_currency }}</td><td>{{ a.received_amount }}</td><td>{{ a.status }}{% if a.is_duplicate %} (dup){% endif %}</td><td>{{ a.expires_at.strftime('%m-%d %H:%M') }}</td><td class="small">{{ a.provider_ref or '' }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

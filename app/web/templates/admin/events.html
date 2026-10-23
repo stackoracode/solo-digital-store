@@ -1,0 +1,7 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<h1 class="h2">Webhook events</h1>
+<div class="table-wrap"><table><thead><tr><th>Received</th><th>Provider</th><th>Type</th><th>Event ID</th><th>Signature</th><th>Result</th><th>IP</th></tr></thead><tbody>
+{% for e in events %}<tr><td>{{ e.received_at.strftime('%m-%d %H:%M:%S') }}</td><td>{{ e.provider }}</td><td>{{ e.event_type }}</td><td class="small">{{ e.event_id or '' }}</td><td>{{ 'valid' if e.signature_valid else 'INVALID' }}</td><td>{{ e.result }}{% if e.error %} · {{ e.error[:120] }}{% endif %}</td><td>{{ e.remote_ip }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

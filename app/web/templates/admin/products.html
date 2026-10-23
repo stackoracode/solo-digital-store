@@ -1,0 +1,19 @@
+{% extends "admin/base_admin.html" %}
+{% block admin %}
+<div class="row-between"><h1 class="h2">{{ t('admin.products') }}</h1><a class="btn btn-primary" href="/admin/products/new">+ {{ t('admin.quick_list') }}</a></div>
+<div class="table-wrap"><table>
+  <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Delivery</th><th>SKUs (price · stock)</th><th>Waffo</th></tr></thead>
+  <tbody>
+  {% for p in products %}
+  <tr>
+    <td>{{ p.id }}</td>
+    <td><a href="/admin/products/{{ p.id }}">{{ p.title }}</a><br><span class="muted small">/p/{{ p.slug }}</span></td>
+    <td><span class="tag">{{ p.status }}</span></td>
+    <td>{{ p.fulfillment_method }}</td>
+    <td>{% for s in p.skus %}{{ s.name }} {{ s.price|money(s.currency) }}{% if p.fulfillment_method == 'auto_card' %} · <a href="/admin/skus/{{ s.id }}/codes">{{ stock.get(s.id, 0) }}</a>{% endif %}<br>{% endfor %}</td>
+    <td>{% if p.waffo_product_id %}{{ 'approved' if p.waffo_approved else 'mapped' }}{% else %}—{% endif %}</td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="muted">No products yet.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

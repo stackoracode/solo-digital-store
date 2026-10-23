@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('mfa.setup_title') }}</h1>
+  <p>{{ t('mfa.setup_help') }}</p>
+  <div class="qr"><img src="{{ qr }}" alt="TOTP QR" width="200" height="200"></div>
+  <p class="center"><code class="break">{{ secret }}</code></p>
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  <form method="post" action="/admin/mfa/setup">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('mfa.code') }}<input name="code" inputmode="numeric" maxlength="6" required autocomplete="one-time-code"></label>
+    <button class="btn btn-primary btn-block">{{ t('mfa.enable') }}</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+# Manually triggered: autogenerate an Alembic revision against a clean Postgres and upload it as an
+# artifact. A human reviews it, edits if needed (e.g. standalone sequences) and commits it.
+name: Autogenerate migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Migration message
+        required: true
+        default: schema change
+
+permissions:
+  contents: read
+
+jobs:
+  autogen:
+    runs-on: ubuntu-latest
+    defaults: { run: { shell: bash -el {0} } }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: store, POSTGRES_PASSWORD: store, POSTGRES_DB: store }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U store" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://store:store@localhost:5432/store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: solostore
+          miniforge-version: latest
+      - env:
+          MSG: ${{ inputs.message }}
+        run: |
+          alembic upgrade head
+          alembic revision --autogenerate -m "$MSG"
+          ruff format alembic/versions || true
+          git status --porcelain alembic/versions
+      - uses: actions/upload-artifact@v4
+        with:
+          name: migration
+          path: alembic/versions/*.py

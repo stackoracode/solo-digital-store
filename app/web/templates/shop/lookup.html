@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('lookup.title') }}</h1>
+  {% if returned %}<div class="alert info">{{ t('lookup.returned') }}</div>{% endif %}
+  {% if sent %}<div class="alert info">{{ t('lookup.sent') }}</div>{% endif %}
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  <p class="muted">{{ t('lookup.help') }}</p>
+  <form method="post" action="/lookup">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('lookup.order_no') }}<input name="order_no" required maxlength="32" autocapitalize="characters" autocomplete="off"></label>
+    <label>{{ t('lookup.email') }}<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
+    {% include "partials/turnstile.html" %}
+    <button class="btn btn-primary btn-block">{{ t('lookup.submit') }}</button>
+  </form>
+</section>
+{% endblock %}

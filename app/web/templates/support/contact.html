@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1 class="h2">{{ t('support.title') }}</h1>
+  <ul class="facts">
+    <li><span>{{ t('support.email') }}</span><strong>{{ ss.support_email }}</strong></li>
+    <li><span>{{ t('support.hours') }}</span><strong>{{ ss.support_hours }}</strong></li>
+  </ul>
+  {% if ss.support_contacts %}<p>{{ ss.support_contacts|nl2br }}</p>{% endif %}
+  <p class="muted small">{{ t('support.order_hint') }}</p>
+  {% if error %}<div class="alert">{{ t('error.' ~ error) }}</div>{% endif %}
+  <form method="post" action="/support">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>{{ t('support.your_email') }}<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
+    <label>{{ t('support.subject') }}<input name="subject" required maxlength="160"></label>
+    <label>{{ t('support.message') }}<textarea name="body" rows="5" required maxlength="5000"></textarea></label>
+    {% include "partials/turnstile.html" %}
+    <button class="btn btn-primary btn-block">{{ t('support.send') }}</button>
+  </form>
+</section>
+{% endblock %}
